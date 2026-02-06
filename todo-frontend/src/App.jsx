@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from './api';
+import './App.css';
 
 function App() {
   const [todos, setTodos] = useState([]);
@@ -25,22 +26,29 @@ function App() {
 
   const addTodo = async () => {
     if (!title.trim()) return;
-
     try {
       await api.post('/todos', { title });
       setTitle('');
-      fetchTodos();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create todo');
+      fetchTodos(); 
+    } catch {
+      setError('Failed to add todo');
     }
   };
 
   const updateStatus = async (id, status) => {
+    setTodos(prev =>
+      prev.map(todo =>
+        todo.id === id
+          ? { ...todo, status }
+          : todo
+      )
+    );
+
     try {
       await api.patch(`/todos/${id}`, { status });
+    } catch {
+      setError('Failed to update status');
       fetchTodos();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -49,70 +57,68 @@ function App() {
   }, [search]);
 
   return (
-    <div style={{ padding: 20, maxWidth: 700 }}>
-      <h2>Todo App</h2>
+    <div className="page">
+      <div className="card">
+        <h1>Todo List</h1>
 
-      {/* ADD TODO */}
-      <div>
-        <input
-          placeholder="New todo"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-        />
-        <button onClick={addTodo}>Add</button>
-      </div>
+        <div className="two-column">
+          <input
+            className="search"
+            placeholder="Search todo..."
+            onChange={e => setSearch(e.target.value)}
+          />
+          <div className="row">
+            <input
+              placeholder="Add new todo..."
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+            />
+            <button onClick={addTodo}>Add</button>
+          </div>
+        </div>
 
-      <br />
+        {loading && <p className="info">Loading...</p>}
+        {error && <p className="error">{error}</p>}
 
-      {/* SEARCH */}
-      <input
-        placeholder="Search todo"
-        onChange={e => setSearch(e.target.value)}
-      />
-
-      <br /><br />
-
-      {/* STATE */}
-      {loading && <p>Loading...</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      {/* TABLE */}
-      <table border="1" cellPadding="8" width="100%">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Title</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {todos.map((todo, i) => (
-            <tr key={todo.id}>
-              <td>{i + 1}</td>
-              <td>{todo.title}</td>
-              <td>
-                <select
-                  value={todo.status}
-                  onChange={e =>
-                    updateStatus(todo.id, e.target.value)
-                  }
-                >
-                  <option value="created">created</option>
-                  <option value="on_going">on_going</option>
-                  <option value="completed">completed</option>
-                  <option value="problem">problem</option>
-                </select>
-              </td>
-            </tr>
-          ))}
-
-          {!loading && todos.length === 0 && (
+        <table>
+          <thead>
             <tr>
-              <td colSpan="3">No todos</td>
+              <th>#</th>
+              <th>Title</th>
+              <th>Status</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {todos.map((todo, i) => (
+              <tr key={todo.id}>
+                <td>{i + 1}</td>
+                <td>{todo.title}</td>
+                <td>
+                  <select
+                    value={todo.status}
+                    onChange={e =>
+                      updateStatus(todo.id, e.target.value)
+                    }
+                  >
+                    <option value="created">Created</option>
+                    <option value="on_going">On going</option>
+                    <option value="completed">Completed</option>
+                    <option value="problem">Problem</option>
+                  </select>
+                </td>
+              </tr>
+            ))}
+
+            {!loading && todos.length === 0 && (
+              <tr>
+                <td colSpan="3" className="empty">
+                  No todos found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
